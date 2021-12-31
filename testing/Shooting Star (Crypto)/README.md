@@ -33,3 +33,4 @@ Files:
     
 Folders:
    - diff_market_diff_time_testing - Testing shooting_star on different markets at different bar lengths. market_check.ods summarises results.
+   - shadow_length_effect - Test different values of shadow_length to see effect. Reslts in results.csv. TLDR: Longer shadow = less trades, higher win% and avg return, lower overall profit.
