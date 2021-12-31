@@ -10,6 +10,9 @@ Variations:
    - variation4: variation3 + Entry candle does not have to be green and exit candle does not have to be red
    - variation5: Entry candle has to be green and exit candle does not have to be red
    - variation6: Entry candle does not have to be green and exit candle has to be red  
+   - variation7: variation1 + MA8 > MA13 for entry
+   - variation8: variation1 + MA8 < MA13 for exit
+   - variation9: variation1 + MA8 > MA13 for entry and MA8 < MA13 for exit
     
 Results:
    - shooting_star: 2172.04
@@ -19,6 +22,9 @@ Results:
    - variation4: 1037.01
    - variation5: 690.96
    - variation6: 1321.31
+   - variation7: 2068.09
+   - variation8: 1538.51
+   - variation9: 1618.49
     
 Files:
    - .py - backtesting scripts
