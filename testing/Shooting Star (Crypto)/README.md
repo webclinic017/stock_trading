@@ -32,4 +32,4 @@ Files:
    - .png - backtest stats
     
 Folders:
-   - diff_market_diff_time_testing - Testing variation3 on different markets at different bar lengths. market_check.ods summarises results.
+   - diff_market_diff_time_testing - Testing shooting_star on different markets at different bar lengths. market_check.ods summarises results.
