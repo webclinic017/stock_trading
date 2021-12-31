@@ -6,7 +6,7 @@ import sys
 def get_data(symbol, start_date, end_date, period):
     
     prices = pd.read_csv("/home/users/dgalea/stock_trading/data/crypto_minute_data/" + symbol + "_prices.csv")
-    quotes = pd.read_csv("/home/users/dgalea/stock_trading/data/crypto_minute_quotes/" + symbol + "_quotes_new.csv")
+    quotes = pd.read_csv("/home/users/dgalea/stock_trading/data/crypto_minute_quotes/" + symbol + "_quotes.csv")
     
     prices = prices[prices["exchange"] == "CBSE"]
     
@@ -52,8 +52,10 @@ def simulation(prices, quotes, shadow_length):
     open_trades = []
     close_trades = []
     
-    for index, values in all_data.iterrows():
+    for row in range(len(all_data)-1):
         
+        index = all_data.index.values[row]
+        values = all_data.iloc[row]
         open_price = values.open
         close_price = values.close
         high_price = values.high
@@ -69,11 +71,11 @@ def simulation(prices, quotes, shadow_length):
 
         if close_price > open_price and close_price == high_price and lower_wick_length * shadow_length > body_length:
             if len(open_trades) == len(close_trades):
-                open_trades.append([index, values.median_ask_price])
+                open_trades.append([index, all_data.iloc[row+1].median_ask_price])
                 
         if close_price < open_price and upper_wick_length > lower_wick_length and upper_wick_length * shadow_length > body_length:
             if len(open_trades) - 1 == len(close_trades):
-                close_trades.append([index, values.median_bid_price])
+                close_trades.append([index, all_data.iloc[row+1].median_bid_price])
         
     if len(open_trades) - 1 == len(close_trades):
         open_trades = open_trades[:-1]

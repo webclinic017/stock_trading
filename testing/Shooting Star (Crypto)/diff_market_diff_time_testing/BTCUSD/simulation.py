@@ -52,8 +52,10 @@ def simulation(prices, quotes, shadow_length):
     open_trades = []
     close_trades = []
     
-    for index, values in all_data.iterrows():
+    for row in range(len(all_data)-1):
         
+        index = all_data.index.values[row]
+        values = all_data.iloc[row]
         open_price = values.open
         close_price = values.close
         high_price = values.high
@@ -67,20 +69,20 @@ def simulation(prices, quotes, shadow_length):
             upper_wick_length = abs(high_price - open_price)
             lower_wick_length = abs(close_price - low_price)
 
-        if close_price > open_price and lower_wick_length > upper_wick_length and lower_wick_length * shadow_length > body_length:
+        if close_price > open_price and close_price == high_price and lower_wick_length * shadow_length > body_length:
             if len(open_trades) == len(close_trades):
-                open_trades.append([index, values.median_ask_price])
+                open_trades.append([index, all_data.iloc[row+1].median_ask_price])
                 
-        if close_price < open_price and upper_wick_length > lower_wick_length and upper_wick_length * shadow_length > body_length:
+        if close_price < open_price and close_price == low_price and upper_wick_length * shadow_length > body_length:
             if len(open_trades) - 1 == len(close_trades):
-                close_trades.append([index, values.median_bid_price])
+                close_trades.append([index, all_data.iloc[row+1].median_bid_price])
         
     if len(open_trades) - 1 == len(close_trades):
         open_trades = open_trades[:-1]
         
     return open_trades, close_trades
         
-def log_trades(open_trades, close_trades, symbol, period):
+def log_trades(open_trades, close_trades, symbol):
     
     logs = []
     for i in range(len(open_trades)):
@@ -92,7 +94,7 @@ def log_trades(open_trades, close_trades, symbol, period):
     history["Entry Time"] = pd.Index(pd.to_datetime(history["Entry Time"]))
     history["Exit Time"] = pd.Index(pd.to_datetime(history["Exit Time"]))
     
-    history.to_csv(str(period) + "min.csv")
+    history.to_csv(str(sys.argv[1]) + "_min.csv")
     
 if __name__ == "__main__":
     
@@ -106,5 +108,5 @@ if __name__ == "__main__":
     
     open_trades, close_trades = simulation(prices, quotes, shadow_length)
     
-    log_trades(open_trades, close_trades, symbol, period)
+    log_trades(open_trades, close_trades, symbol)
     
