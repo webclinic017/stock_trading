@@ -3,7 +3,7 @@
 Enter on a hammer pattern (green candle - long bottom shadow; little to no upper shadow) and exit on a shooting star (red candle - long upper shadow; little to no lower shadow)
 
 Variations:
-   - **shooting_star: Strict rules as above**
+   - **shooting_star: Strict rules as above - no upper/lower shadow for entry/exit**
    - variation1: Strict rules as above but shorter lower shadow than upper shadow for entry
    - variation2: Shorter upper shadow than lower shadow for exit
    - variation3: variation1 + variation2: Shorter lower shadow than upper shadow for entry and shorter upper shadow than lower shadow for exit
@@ -13,6 +13,7 @@ Variations:
    - variation7: variation1 + MA8 > MA13 for entry
    - variation8: variation1 + MA8 < MA13 for exit
    - variation9: variation1 + MA8 > MA13 for entry and MA8 < MA13 for exit
+   - variation10: Daily 20MA of day-1 must be higher than that of day-2
     
 Results:
    - shooting_star: 2172.04
@@ -25,6 +26,7 @@ Results:
    - variation7: 2068.09
    - variation8: 1538.51
    - variation9: 1618.49
+   - variation10: 1371.63
     
 Files:
    - .py - backtesting scripts
