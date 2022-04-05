@@ -16,6 +16,7 @@ Variations:
    - variation10: Daily 20MA of day-1 must be higher than that of day-2
    - **variation11: Median Bid-Ask spread of previous timestep has to be < \$100**
    - variation12: variation10 + variation11
+   - variation13: variation11 + shooting_star
     
 Results:
    - shooting_star: 2172.04
@@ -31,6 +32,7 @@ Results:
    - variation10: 1371.63
    - variation11: 2239.53
    - variation12: 1652.30
+   - variation13: 2239.53
     
 Files:
    - .py - backtesting scripts
