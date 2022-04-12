@@ -420,7 +420,7 @@ if __name__ == "__main__":
     daily_backtest_both.plot(x="Dates", y="Daily Returns", ax=axs[1][0])
     axs[1][0].set_title("Daily Returns")
     
-    daily_backtest_both["Accum Returns"] = daily_backtest_both.sort_values("Dates")["Daily Returns"].cumsum()
+    daily_backtest_both["Accum Returns"] = daily_backtest_both.sort_values("Dates")["Daily Returns"].cumsum() / 1000 * 100
     daily_backtest_both.plot(x="Dates", y="Accum Returns", ax=axs[1][1])
     #comp_returns.plot(x="Dates", y="Accum Returns", ax=axs[1][1], label="Comp Returns")
     axs[1][1].set_title("Daily Accum Returns")
@@ -429,17 +429,18 @@ if __name__ == "__main__":
     end_date_str = str(daily_backtest_both.sort_values("Dates")["Dates"].values[-1]).split("T")[0]
     
     spy = yf.download("^GSPC", start=start_date_str, end=end_date_str)
-    spy["Close"] -= spy["Close"].values[0]
+    spy["Close"] = (spy["Close"] - spy["Close"].values[0]) / spy["Close"].values[0] * 100
     spy.plot(y="Close", label = "SPY", ax=axs[1][1])
     
     dji = yf.download("^DJI", start=start_date_str, end=end_date_str)
-    dji["Close"] -= dji["Close"].values[0]
+    dji["Close"] = (dji["Close"] - dji["Close"].values[0]) / dji["Close"].values[0] * 100
     dji.plot(y="Close", label = "DJI", ax=axs[1][1])
     
     ixic = yf.download("^IXIC", start=start_date_str, end=end_date_str)
-    ixic["Close"] -= ixic["Close"].values[0]
+    ixic["Close"] = (ixic["Close"] - ixic["Close"].values[0]) / ixic["Close"].values[0] * 100
     ixic.plot(y="Close", label = "^IXIC", ax=axs[1][1])
-      
+    axs[1][1].set_ylabel("% Return")
+    
     bins = np.array(list(range(100))) - 50
     perc = backtest["Return"].values / backtest["Entry"].values * 100
     axs[1][2].hist(perc, bins=bins)
