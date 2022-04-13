@@ -194,7 +194,7 @@ if __name__ == "__main__":
         
         for symbol in symbols:
             
-            median_diff = diff_stats.loc["BTCUSD"]["50th"]
+            median_diff = diff_stats.loc[symbol]["50th"]
             for period in periods:
                 period_prices = prices[(symbol, period)].loc[period_prev_date:period_start_date]
                 for diff in diffs:
