@@ -186,8 +186,8 @@ if __name__ == "__main__":
     key_id, secret_key = load_credentials(opt="paper")
     api = REST(key_id, secret_key, base_url='https://paper-api.alpaca.markets')
     
-    start_date = "2022-01-01"
-    end_date = "2022-05-11"
+    start_date = "2021-01-01"
+    end_date = "2022-05-18"
     etoro_sl = 2.5
     
     symbol = sys.argv[1]

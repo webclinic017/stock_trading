@@ -5,7 +5,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing as mp
-import sys
+import sys, os
+os.environ["APCA_RETRY_MAX"] = "100"
+os.environ["APCA_RETRY_WAIT"] = "1"
+
 
 def load_credentials(opt="paper"):
     '''
@@ -186,8 +189,8 @@ if __name__ == "__main__":
     key_id, secret_key = load_credentials(opt="paper")
     api = REST(key_id, secret_key, base_url='https://paper-api.alpaca.markets')
     
-    start_date = "2022-01-01"
-    end_date = "2022-05-11"
+    start_date = "2021-01-01"
+    end_date = "2022-05-17"
     etoro_sl = 2.5
     
     symbol = sys.argv[1]

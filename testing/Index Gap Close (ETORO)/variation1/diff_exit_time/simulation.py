@@ -5,7 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing as mp
-import sys
+import sys, os
+os.environ["APCA_RETRY_MAX"] = "100"
+os.environ["APCA_RETRY_WAIT"] = "1"
 
 def load_credentials(opt="paper"):
     '''
@@ -94,30 +96,29 @@ def process_date(api, symbol, prev_date, curr_date, etoro_sl, max_sl, max_tp, ex
         
         if day_open > prev_close:
             if period_high > sl:
-                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, sl, 1, exit_time)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 1, exit_time)
                 exit_price_present = True
                 break
             if period_low < tp:
-                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, tp, 0, exit_time)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 0, exit_time)
                 exit_price_present = True
                 break
-            
         elif day_open < prev_close:
             if period_high > tp:
-                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, tp, 1, exit_time)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 1, exit_time)
                 exit_price_present = True
                 break
             if period_low < sl:
-                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, sl, 0, exit_time)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 0, exit_time)
                 exit_price_present = True
                 break
-    
+                
     if exit_price_present == False:
         if day_open > prev_close:
-            exit_time, exit_price = get_quotes_entry(api, symbol, data.index.values[-1], 0, exit_time)
+            exit_time, exit_price = get_quotes_exit(api, symbol, pd.to_datetime(data.index.values[-1]).tz_localize("UTC").tz_convert(tz='America/New_York')-td(minutes=exit_time), 0, exit_time)
         elif day_open < prev_close:
-            exit_time, exit_price = get_quotes_entry(api, symbol, data.index.values[-1], 1, exit_time)
-        
+            exit_time, exit_price = get_quotes_exit(api, symbol, pd.to_datetime(data.index.values[-1]).tz_localize("UTC").tz_convert(tz='America/New_York')-td(minutes=exit_time), 1, exit_time)
+            
     if entry_price is None or exit_price is None:
         return pd.DataFrame()
     
@@ -126,9 +127,10 @@ def process_date(api, symbol, prev_date, curr_date, etoro_sl, max_sl, max_tp, ex
     
     return trade_data
 
-def get_quotes_exit(api, symbol, init_date, tp_sl, buy_sell, exit_time):
+def get_quotes_exit(api, symbol, init_date, buy_sell, exit_time):
     
-    init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
+    if isinstance(init_date, np.datetime64):
+        init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
     end_time = init_date - td(minutes=exit_time) 
     
     init_date_str = init_date.isoformat()

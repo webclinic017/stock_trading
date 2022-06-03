@@ -5,7 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import multiprocessing as mp
-import sys
+import sys, os
+os.environ["APCA_RETRY_MAX"] = "100"
+os.environ["APCA_RETRY_WAIT"] = "1"
 
 def load_credentials(opt="paper"):
     '''
@@ -74,11 +76,14 @@ def process_date(api, symbol, prev_date, curr_date, etoro_sl, max_sl, max_tp, ex
         return pd.DataFrame()
     
     if day_open > prev_close:
-        entry_price = get_quotes_entry(api, symbol, data.index.values[0], 1)
+        entry_time, entry_price = get_quotes_entry(api, symbol, data.index.values[0], 1, exit_time)
         direction = "SHORT"
     elif day_open < prev_close:
-        entry_price = get_quotes_entry(api, symbol, data.index.values[0], 0)
+        entry_time, entry_price = get_quotes_entry(api, symbol, data.index.values[0], 0, exit_time)
         direction = "LONG"
+        
+    if entry_price is None:
+        return pd.DataFrame()
         
     exit_price_present = False
     for data_i in range(len(data) - exit_time):
@@ -91,71 +96,120 @@ def process_date(api, symbol, prev_date, curr_date, etoro_sl, max_sl, max_tp, ex
         
         if day_open > prev_close:
             if period_high > sl:
-                exit_price = get_quotes_exit(api, symbol, period_timestamp, sl, 1)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 1, exit_time)
                 exit_price_present = True
                 break
             if period_low < tp:
-                exit_price = get_quotes_exit(api, symbol, period_timestamp, tp, 0)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 0, exit_time)
                 exit_price_present = True
                 break
-            
         elif day_open < prev_close:
             if period_high > tp:
-                exit_price = get_quotes_exit(api, symbol, period_timestamp, tp, 1)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 1, exit_time)
                 exit_price_present = True
                 break
             if period_low < sl:
-                exit_price = get_quotes_exit(api, symbol, period_timestamp, sl, 0)
+                exit_time, exit_price = get_quotes_exit(api, symbol, period_timestamp, 0, exit_time)
                 exit_price_present = True
                 break
-    
+                
     if exit_price_present == False:
         if day_open > prev_close:
-            exit_price = get_quotes_entry(api, symbol, data.index.values[-1], 0)
+            exit_time, exit_price = get_quotes_exit(api, symbol, pd.to_datetime(data.index.values[-1]).tz_localize("UTC").tz_convert(tz='America/New_York')-td(minutes=exit_time), 0, exit_time)
         elif day_open < prev_close:
-            exit_price = get_quotes_entry(api, symbol, data.index.values[-1], 1)
-        
-    if np.isnan(entry_price) or np.isnan(exit_price):
+            exit_time, exit_price = get_quotes_exit(api, symbol, pd.to_datetime(data.index.values[-1]).tz_localize("UTC").tz_convert(tz='America/New_York')-td(minutes=exit_time), 1, exit_time)
+            
+    if entry_price is None or exit_price is None:
         return pd.DataFrame()
     
-    entry_timestamp = pd.to_datetime(data.index.values[0]).tz_localize("UTC").tz_convert(tz='America/New_York')
-    exit_timestamp = pd.to_datetime(period_timestamp).tz_localize("UTC").tz_convert(tz='America/New_York')
-    trade_data = pd.DataFrame([entry_timestamp, exit_timestamp, symbol, direction, entry_price, exit_price]).T
+    trade_data = pd.DataFrame([entry_time, exit_time, symbol, direction, entry_price, exit_price]).T
     trade_data.columns = ["Entry Time", "Exit Time", "Symbol", "Direction", "Entry", "Exit"]
     
     return trade_data
 
-def get_quotes_exit(api, symbol, init_date, tp_sl, buy_sell):
+def get_quotes_exit(api, symbol, init_date, buy_sell, exit_time):
     
-    init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
+    if isinstance(init_date, np.datetime64):
+        init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
+    end_time = init_date - td(minutes=exit_time) 
+    
     init_date_str = init_date.isoformat()
     end_date_str = (init_date + td(minutes=1)).isoformat()
     
     quotes = api.get_quotes(symbol, init_date_str, end_date_str, limit=1000000).df
     
-    if buy_sell == 0:
-        quotes = quotes[quotes["ask_price"] <= tp_sl]
-        price = quotes["ask_price"].median()
-    elif buy_sell == 1:
-        quotes = quotes[quotes["bid_price"] >= tp_sl]
-        price = quotes["bid_price"].median()
+    while len(quotes) == 0:
+        init_date += td(minutes=1)
+        init_date_str = init_date.isoformat()
+        end_date_str = (init_date + td(minutes=1)).isoformat()
+        quotes = api.get_quotes(symbol, init_date_str, end_date_str, limit=1000000).df
     
-    return price
+        if init_date > end_time:
+            return None, None
+    
+    quotes = process_quotes(quotes)
+    quotes = quotes.dropna()
+    
+    if buy_sell == 0:
+        price = quotes["median_ask_price"].values[0]
+    elif buy_sell == 1:
+        price = quotes["median_bid_price"].values[0]
+    
+    return init_date, price
 
-def get_quotes_entry(api, symbol, init_date, buy_sell):
+def get_quotes_entry(api, symbol, init_date, buy_sell, exit_time):
     
     init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
+    end_time = init_date - td(minutes=exit_time) 
+    
     init_date_str = init_date.isoformat()
-    end_date_str = (init_date + td(seconds=10)).isoformat()
+    end_date_str = (init_date + td(minutes=1)).isoformat()
     
     quotes = api.get_quotes(symbol, init_date_str, end_date_str, limit=1000000).df
     
-    if buy_sell == 0:
-        price = quotes["ask_price"].median()
-    elif buy_sell == 1:
-        price = quotes["bid_price"].median()
+    while len(quotes) == 0:
+        init_date += td(minutes=1)
+        init_date_str = init_date.isoformat()
+        end_date_str = (init_date + td(minutes=1)).isoformat()
+        quotes = api.get_quotes(symbol, init_date_str, end_date_str, limit=1000000).df
+        
+        if init_date > end_time:
+            return None, None
+        
+    quotes = process_quotes(quotes)
+    quotes = quotes.dropna()
     
-    return price
+    if buy_sell == 0:
+        price = quotes["median_ask_price"].values[0]
+    elif buy_sell == 1:
+        price = quotes["median_bid_price"].values[0]
+    
+    return init_date, price
+
+def process_quotes(data):
+    '''
+    Process quotes to get min/max/mean/median bid/ask prices per minute.
+    Args:
+        dataframe: data - Quote data from Alpaca API
+    Returns:
+        dataframe: data - Treated data
+    '''
+    
+    data = data[["ask_price", "bid_price"]]
+        
+    bid_max = data["bid_price"].resample("10s").max()
+    bid_min = data["bid_price"].resample("10s").min()
+    bid_mean = data["bid_price"].resample("10s").mean()
+    bid_median = data["bid_price"].resample("10s").median()
+    ask_max = data["ask_price"].resample("10s").max()
+    ask_min = data["ask_price"].resample("10s").min()
+    ask_mean = data["ask_price"].resample("10s").mean()
+    ask_median = data["ask_price"].resample("10s").median()
+        
+    data = pd.DataFrame([bid_max, bid_min, bid_mean, bid_median, ask_max, ask_min, ask_mean, ask_median]).T
+    data.columns = ["max_bid_price", "min_bid_price", "mean_bid_price", "median_bid_price", "max_ask_price", "min_ask_price", "mean_ask_price", "median_ask_price"]
+    
+    return data
 
 if __name__ == "__main__":
     
