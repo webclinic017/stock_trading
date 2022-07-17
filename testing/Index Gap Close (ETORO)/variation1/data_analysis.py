@@ -15,7 +15,7 @@ def load_credentials(opt="paper"):
     '''
     
     #Open credentials file
-    with open("/home/users/dgalea/stock_trading/credentials.txt") as file:
+    with open("/Users/danielgalea/Documents/git/stock_trading/credentials.txt") as file:
         
         #Read lines
         lines = file.readlines()
