@@ -57,6 +57,12 @@ def simulation(prices, shadow_length):
 
     last_close_trade = None
 
+    years = prices.index.year.values
+    months = prices.index.month.values
+    days = prices.index.day.values
+    hours = prices.index.hour.values
+    minutes = prices.index.minute.values
+    
     for row in range(len(prices)-1):
         
         index = prices.index.values[row]
@@ -69,10 +75,10 @@ def simulation(prices, shadow_length):
         if last_close_trade != None and pd.to_datetime(index).tz_localize("UTC").tz_convert(tz='America/New_York') <= last_close_trade:
             continue
 
-        if prices.index.year.values[row] == 2018 and prices.index.month.values[row] == 2 and (prices.index.day.values[row] in [3, 4, 5] or (prices.index.day.values[row] == 2 and prices.index.hour.values[row] >= 17)):
+        if years[row] == 2018 and months[row] == 2 and (days[row] in [2, 3, 4, 5] or (days[row] == 2 and hours[row] >= 17)):
             continue
 
-        if prices.index.hour.values[row] == 0 and prices.index.minute.values[row] == 0:
+        if hours[row] == 0 and minutes[row] == 0:
             print(index)
         
         body_length = abs(open_price - close_price)
@@ -83,12 +89,12 @@ def simulation(prices, shadow_length):
             upper_wick_length = abs(high_price - open_price)
             lower_wick_length = abs(close_price - low_price)
 
-        if close_price > open_price and lower_wick_length > upper_wick_length and lower_wick_length * shadow_length > body_length:
+        if close_price > open_price and lower_wick_length > upper_wick_length and lower_wick_length > body_length * shadow_length:
             if len(open_trades) == len(close_trades):
                 date, quotes = get_quotes(api, symbol, index, offset=0)
                 open_trades.append([date, quotes.median_ask_price[0]])
                 
-        if close_price < open_price and upper_wick_length > lower_wick_length and upper_wick_length * shadow_length > body_length:
+        if close_price < open_price and upper_wick_length > lower_wick_length and upper_wick_length > body_length * shadow_length:
             if len(open_trades) - 1 == len(close_trades):
                 date, quotes = get_quotes(api, symbol, index, offset=0)
                 close_trades.append([date, quotes.median_bid_price[0]])
