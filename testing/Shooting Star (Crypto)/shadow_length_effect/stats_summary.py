@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     money_per_trade = 1000
     stop_trading = -1000
-    commission = 0
+    commission = 6
     
     files = [f for f in os.listdir(".") if os.path.isfile(os.path.join(".", f))]
     files = [f for f in files if ".csv" in f]

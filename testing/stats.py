@@ -7,16 +7,17 @@ import os, sys
 import seaborn as sns
 
 sys.path.insert(0, "/Users/danielgalea/Documents/git/stock_trading") 
-from common_funcs import *
+from common_funcs import get_backtest, get_daily_returns, get_underwater_data, get_monte_carlo, accum_return, annual_return, max_dd, annual_sharpe_ratio, win_perc, avg_return, avg_win, avg_loss, largest_loss, largest_win, consecutive_losses, consecutive_wins
 
 if __name__ == "__main__":
     
     money_per_trade = 1000
     stop_trading = -1000
-    commission = 0
+    commission = 6
     
     path = sys.argv[1]
     df = pd.read_csv(path)
+    
     backtest = get_backtest(df, money_per_trade, commission)
     
     daily_backtest_both = get_daily_returns(backtest, "Both")
