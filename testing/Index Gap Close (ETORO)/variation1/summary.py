@@ -71,12 +71,11 @@ def win_perc(df, side):
             return len(df2.loc[df2["Return"] > 0]) / len(df2) * 100
         else:
             return 0
-    return win_return
+    return 0
 
 if __name__ == "__main__":
     
     path = sys.argv[1]
-    position = int(sys.argv[2])
     
     money_per_trade = 1000
     commission = 0
@@ -88,7 +87,10 @@ if __name__ == "__main__":
     
     for file in files:
         
-        key = file.replace(".csv", "").split("_")[position]
+        try:
+            key = float(file.replace(".csv", ""))
+        except:
+            key = file.replace(".csv", "")
         csv = pd.read_csv(path + file)
         
         backtest = get_backtest(csv, money_per_trade, commission)

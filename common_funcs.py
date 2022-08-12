@@ -62,7 +62,7 @@ def log_trades(open_trades, close_trades, name=None, save=True):
     
     logs = []
     for i in range(len(open_trades)):
-        logs.append([str(open_trades[i][0]), str(close_trades[i][0]), open_trades[i][1], "LONG", open_trades[i][-1], close_trades[i][-1]])
+        logs.append([str(open_trades[i][0]), str(close_trades[i][0]), open_trades[i][1], open_trades[i][3], open_trades[i][2], close_trades[i][-1]])
         
     history = pd.DataFrame(logs)
     
@@ -435,31 +435,11 @@ def get_crypto_quotes(api, symbol, init_date, seconds, offset=0):
     if offset > 0:
         init_date -= td(minutes=1)
     init_date += td(seconds=seconds)
-    '''
-    input_init_date = init_date
-    init_date_str = init_date.isoformat()
-    end_date_str = (init_date + td(minutes=1)).isoformat()
 
-    quotes = api.get_crypto_quotes(symbol, init_date_str, end_date_str, limit=1000).df
-    '''
     init_date_str = init_date.isoformat()
     end_date_str = (init_date + td(hours=6)).isoformat()
     quotes = api.get_crypto_quotes(symbol, init_date_str, end_date_str, limit=10000).df  
     
-    '''
-    counter = 0
-    while len(quotes) == 0:
-        init_date += td(minutes=1)
-        init_date_str = init_date.isoformat()
-        end_date_str = (init_date + td(minutes=1)).isoformat()
-        quotes = api.get_crypto_quotes(symbol, init_date_str, end_date_str, limit=1000).df
-        counter += 1
-        
-        if counter == 10:
-            init_date_str = init_date.isoformat()
-            end_date_str = (init_date + td(days=1)).isoformat()
-            quotes = api.get_crypto_quotes(symbol, init_date_str, end_date_str, limit=1000).df                            
-    ''' 
     if not quotes.empty:
         quotes = process_quotes(quotes)
 
@@ -478,6 +458,53 @@ def get_crypto_prices(api, symbol, start_date, end_date, periods):
     
     if len(prices[prices["exchange"] == "CBSE"]) > 0:
         prices = prices[prices["exchange"] == "CBSE"]
+    
+    periods_prices = {}
+    for period in periods:
+        if period > 1:
+        
+            opens = prices["open"].resample(str(period) + "min").first()
+            closes = prices["close"].resample(str(period) + "min").last()
+            highs = prices["high"].resample(str(period) + "min").max()
+            lows = prices["low"].resample(str(period) + "min").min()
+            vols = prices["volume"].resample(str(period) + "min").sum()
+
+            period_prices = pd.DataFrame([opens, highs, lows, closes, vols]).T
+        else:
+            period_prices = prices
+
+        periods_prices[period] = period_prices    
+
+    return periods_prices
+
+def get_quotes(api, symbol, init_date, seconds, offset=0):
+    
+    if isinstance(init_date, np.datetime64):
+        init_date = pd.to_datetime(init_date).tz_localize("UTC").tz_convert(tz='America/New_York')
+
+    if offset > 0:
+        init_date -= td(minutes=1)
+    init_date += td(seconds=seconds)
+
+    init_date_str = init_date.isoformat()
+    end_date_str = (init_date + td(hours=6)).isoformat()
+    quotes = api.get_quotes(symbol, init_date_str, end_date_str, limit=10000).df  
+    
+    if not quotes.empty:
+        quotes = process_quotes(quotes)
+
+    return init_date, quotes
+
+def get_prices(api, symbol, start_date, end_date, periods):
+
+    prices = api.get_bars(symbol, TimeFrame.Minute, start_date, end_date).df
+    prices = prices.tz_convert('US/Eastern')
+
+    if len(prices) == 0:
+        periods_prices = {}
+        for period in periods:
+            periods_prices[period] = prices    
+        return periods_prices
     
     periods_prices = {}
     for period in periods:

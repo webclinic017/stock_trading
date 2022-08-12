@@ -13,7 +13,7 @@ if __name__ == "__main__":
     
     money_per_trade = 1000
     stop_trading = -1000
-    commission = 6
+    commission = 0
     
     path = sys.argv[1]
     df = pd.read_csv(path)
